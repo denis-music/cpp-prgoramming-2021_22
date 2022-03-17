@@ -1,0 +1,213 @@
+#include<iostream>
+#include<iomanip>
+using namespace std;
+
+const int redova = 3;
+const int kolona = 3;
+
+class Dugmic {
+private:
+    char _tekst[20];
+    int _sirina;
+    int _visina;
+    void (*pok)(const char tekst[]);
+public:
+    Dugmic(const char tekst[], int sirina, int visina, void (*f)(const char tekst[])) {
+        strcpy_s(_tekst, sizeof(_tekst), tekst);
+        _sirina = sirina;
+        _visina = visina;
+        pok = f;
+    }
+    ~Dugmic()
+    {
+        cout << "Unistavam objekat -> " << _tekst << endl;
+    }
+    void Ispis() {
+        /*
+        -------------------------
+        |                       |
+        |        Spasi          |
+        |                       |
+        -------------------------
+        */
+        int brojZnakova = strlen(_tekst);
+        int ispisOdLokacije = (_sirina / 2) - (brojZnakova / 2);
+        for (size_t i = 0; i < _visina; i++)
+        {
+            for (size_t j = 0; j < _sirina; j++)
+            {
+                if (i == 0 || i == _visina - 1)
+                    cout << "-";
+                else if (j == 0 || j == _sirina - 1)
+                    cout << "|";
+                else if (j == ispisOdLokacije && i == _visina / 2) {
+                    cout << _tekst;
+                    j += brojZnakova - 1;
+                }
+                else
+                    cout << " ";
+            }
+            cout << endl;
+        }
+    }
+    void Klik(const char tekst[]) {
+        pok(tekst);//GlobalnaFunkcija("Klinkuto je na dugmic");
+    }
+    int GetSirina()const { return _sirina; }
+    void SetSirina(int sirina) { _sirina = sirina; }
+};
+void GlobalnaFunkcija(const char tekst[]) {
+    cout << tekst << endl;
+}
+
+class XO {
+private:
+    char _niz[redova][kolona];
+    int _igracNaPotezu;
+    bool _krajIgre;
+    void OcistiMatricu() {
+        for (size_t i = 0; i < redova; i++)
+            for (size_t j = 0; j < kolona; j++)
+                _niz[i][j] = ' ';
+    }
+    void PozicijaIzLokacije(int lokacija, int& r, int& k) {
+        if (lokacija <= 3)
+            r = 0, k = lokacija - 1;
+        else if (lokacija <= 6)
+            r = 1, k = lokacija - 4;
+        else if (lokacija <= 9)
+            r = 2, k = lokacija - 7;
+    }
+    bool ProvjeriKolone() {
+        char prviZnak;
+        int brojac;
+        for (size_t j = 0; j < kolona; j++)
+        {
+            prviZnak = _niz[0][j];
+            brojac = 0;
+            if (prviZnak != ' ') {
+                for (size_t i = 0; i < redova; i++)
+                    if (prviZnak == _niz[i][j])
+                        brojac++;
+                if (brojac == 3)
+                    return true;
+            }
+        }
+        return false;
+    }
+    bool ProvjeriRedove() {
+        char prviZnak;
+        int brojac;
+        for (size_t i = 0; i < redova; i++)
+        {
+            prviZnak = _niz[i][0];
+            brojac = 0;
+            if (prviZnak != ' ') {
+                for (size_t j = 0; j < kolona; j++)
+                    if (prviZnak == _niz[i][j])
+                        brojac++;
+                if (brojac == 3)
+                    return true;
+            }
+        }
+        return false;
+    }
+    bool ProvjeriLDijagonalu() {
+        char prviZnak = _niz[0][0];
+        int brojac = 0;
+        if (prviZnak != ' ') {
+            for (size_t i = 0; i < redova; i++)
+            {
+                for (size_t j = 0; j < kolona; j++)
+                    if (i == j && prviZnak == _niz[i][j])
+                        brojac++;              
+            }
+        }
+        return brojac == 3;
+    }
+    bool ProvjeriDDijagonalu() {
+        char prviZnak = _niz[0][kolona-1];
+        int brojac = 0;
+        if (prviZnak != ' ') {
+            for (size_t i = 0; i < redova; i++)
+            {
+                for (size_t j = 0; j < kolona; j++)
+                    if (i + j == 2 && prviZnak == _niz[i][j])
+                        brojac++;                
+            }
+        }
+        return brojac == 3;
+    }
+public:
+    XO() {
+        _igracNaPotezu = 1;
+        _krajIgre = false;
+        OcistiMatricu();
+    }
+    void Ispis() {
+        /*
+        +---+---+---+
+        |   |   |   |
+        +---+---+---+
+        |   |   |   |
+        +---+---+---+
+        |   |   |   |
+        +---+---+---+
+
+        +---+---+---+
+        |  X|  O|   |
+        +---+---+---+
+        |  X|  O|   |
+        +---+---+---+
+        |  X|  O|   |
+
+        */
+        for (size_t i = 0; i < redova; i++)
+        {
+            for (size_t j = 0; j < kolona; j++)
+                cout << "+---";
+            cout << "+" << endl;
+            for (size_t j = 0; j < kolona; j++)
+                cout << "|" << setw(3) << _niz[i][j];
+            cout << "|" << endl;
+        }
+        for (size_t j = 0; j < kolona; j++)
+            cout << "+---";
+        cout << "+" << endl;
+    }
+    void Igraj(int lokacija) {
+        int r = 0, k = 0;
+        PozicijaIzLokacije(lokacija, r, k);
+        if (_niz[r][k] == ' ') {
+            _niz[r][k] = (_igracNaPotezu % 2 == 0) ? 'X' : 'O';
+            _igracNaPotezu++;
+            if (ProvjeriKolone() || ProvjeriRedove() ||  ProvjeriLDijagonalu() ||                 ProvjeriDDijagonalu())
+                _krajIgre = true;
+        }
+        else
+            cout << "LOKACIJA ZAUZETA!" << endl;
+    }
+    bool KrajIgre() { return _krajIgre; }
+};
+void main() {
+    XO igrica;
+    int lokacija = 0;
+    do {
+        igrica.Ispis();
+        cout << "Lokacija -> ";
+        cin >> lokacija; 
+        //konverziju lokacije u pozicije izvrsiti u main-u, te vrijednosti r i k poslati metodi Igraj
+        system("cls");
+        igrica.Igraj(lokacija);
+
+    } while (!igrica.KrajIgre());
+
+    igrica.Ispis();
+    cout << "Pobjeda, SVAKA CAST" << endl;
+
+    /*Dugmic spasi("Spasi studenta", 40, 5, GlobalnaFunkcija);
+    spasi.Ispis();
+    spasi.SetSirina(50);
+    spasi.Ispis();
+    spasi.Klik("Klinkuto je na dugmic");*/
+}
