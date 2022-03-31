@@ -1,0 +1,200 @@
+#include<iostream>
+#include<ctime>
+#include<string>
+using namespace std;
+
+char* KreirajNizOd(const char* sadrzaj) {//Denis Music
+    if (sadrzaj == nullptr) return nullptr;
+    int velicina = strlen(sadrzaj) + 1;
+    char* temp = new char[velicina];
+    strcpy_s(temp, velicina, sadrzaj);
+    return temp;
+}
+
+class Datum {
+private:
+    int _dan, _mjesec, _godina;
+    bool PrestupnaGodina(int godina) {
+        return godina % 4 == 0 
+            && godina % 100 != 0 
+            || godina % 400 == 0;
+    }
+    int PosljednjiDanUMjesecu(int mjesec, int godina) {
+        if (mjesec == 2)
+            return 28 + PrestupnaGodina(godina);
+        if (mjesec == 4 || mjesec == 6 || mjesec == 9 || mjesec == 11)
+            return 30;
+        return 31;
+    }
+    bool ValidanDatum(int dan, int mjesec, int godina) {
+        return !(dan < 1 || dan>PosljednjiDanUMjesecu(mjesec, godina)
+            || mjesec < 1 || mjesec>12 || godina < 1900);
+    }
+    void SetDatum(int dan, int mjesec, int godina) {
+        _dan = dan;
+        _mjesec = mjesec;
+        _godina = godina;
+    }
+    tm GetTrenutniDatum() {
+        tm datum;
+        time_t trenutno = time(nullptr);
+        localtime_s(&datum, &trenutno);
+        return datum;
+    }
+public:  
+    Datum(int dan = 1, int mjesec = 1, int godina = 2000) {
+        if (ValidanDatum(dan, mjesec, godina))
+            SetDatum(dan, mjesec, godina);
+        else 
+            SetDanasnjiDatum();
+    }
+    void SetDanasnjiDatum() {
+        tm danas = GetTrenutniDatum();
+        SetDatum(danas.tm_mday, danas.tm_mon + 1, danas.tm_year + 1900);
+    }
+    void Prikazi() {
+        cout << _dan << "." << _mjesec << "." << _godina << endl;
+    }
+    void AddDays(int brojDana) {
+
+        while (brojDana > 0)
+        {
+            int danaDoKrajaMjeseca =
+                PosljednjiDanUMjesecu(_mjesec, _godina) - _dan + 1;
+            if (brojDana >= danaDoKrajaMjeseca) {
+                brojDana -= danaDoKrajaMjeseca;
+                _dan = 1;
+                _mjesec++;
+                if (_mjesec > 12) {
+                    _mjesec = 1;
+                    _godina++;
+                }
+            }
+            else {
+                _dan += brojDana;
+                return;
+            }
+        
+        }
+    }
+    string ToString() {
+        return to_string(_dan) + "." + to_string(_mjesec) + "." +
+            to_string(_godina);
+    }
+    char * ToCharArray() {
+        const int max = 15;
+        char* temp = new char[max];//17.3.2022
+        char buffer[max];//"2022"
+
+        _itoa_s(_dan, buffer, 10);//17
+        strcpy_s(temp, max, buffer);
+        strcat_s(temp, max, ".");
+        _itoa_s(_mjesec, buffer, 10);//3
+        strcat_s(temp, max, buffer);
+        strcat_s(temp, max, ".");
+        _itoa_s(_godina, buffer, 10);//3
+        strcat_s(temp, max, buffer);
+
+
+        return temp;
+    }
+    int GetDan()const { return _dan; }
+    int GetMjesec()const { return _mjesec; }
+    int GetGodinu()const { return _godina; }
+};
+
+//class Osoba {
+//    const int _id;
+//    int & _gradId;
+//    char* _imePrezime;
+//    Datum _datumRodjenja;
+//public:
+//    Osoba(const char* imePrezime, int & gradId)
+//        :_id(osobaId ++), _gradId (gradId)
+//    {
+//        _imePrezime = KreirajNizOd(imePrezime);
+//    }
+//
+//    Osoba(const char * imePrezime, int & gradId, int dan, int mjesec, int godina)
+//        : _datumRodjenja(dan, mjesec, godina),
+//          _id(osobaId++), _gradId(gradId)
+//    {
+//        _imePrezime = KreirajNizOd(imePrezime);
+//    }    
+//    ~Osoba(){ delete[] _imePrezime; _imePrezime = nullptr; }
+//    void Info() {
+//        cout <<"("<<_id<<") " << _imePrezime << " rodjen " 
+//            << _datumRodjenja.ToString() <<" iz gradId " << _gradId << endl;
+//    }
+//};
+
+class Osoba {
+    static int _osobaId ;
+    char* _imePrezime;
+    const int _id;
+public:
+    Osoba(const char* imePrezime)
+        : _id(_osobaId++) {
+        _imePrezime = KreirajNizOd(imePrezime);
+        cout << "KONSTR -> " << _id<< " " << _imePrezime << endl;
+    }
+    Osoba(Osoba & original) : _id(_osobaId++) {
+        _imePrezime = KreirajNizOd(original._imePrezime);
+        cout << "COPY KONSTR -> " << _id << " " << _imePrezime << endl;
+    }
+    Osoba(Osoba && original) noexcept :_id(original._id) {
+        if (original._imePrezime == nullptr)
+            throw exception("Ime i prezime nije validno");
+        _imePrezime = original._imePrezime;
+        cout << "MOVE KONSTR -> " << _id << " " << _imePrezime << endl;
+        original._imePrezime = nullptr;
+    }
+    ~Osoba() { 
+        cout << "DESTR -> " << _id << " " << _imePrezime << endl;
+        delete[] _imePrezime; _imePrezime = nullptr; }
+    void Info() {
+        cout << "(" << _id << ") " << _imePrezime << endl;
+    }
+};
+int Osoba::_osobaId = 1;
+
+class Konverter {
+public:
+    static const char* FromIntToChar(int broj) { return "1231"; }
+    static const char* FromDatumToChar(Datum datum) { return "12.12.2022"; }
+};
+
+
+void main() {    
+    Konverter obj;
+    obj.FromIntToChar(564654);
+
+    cout << Konverter::FromIntToChar(564654) << endl;
+
+    cout << Konverter::FromDatumToChar(Datum(2,2,2000)) << endl;
+
+
+    Osoba denis = "Denis Music";
+    denis.Info();
+    Osoba test = denis;
+    test.Info();
+ 
+
+    /*Osoba jasmin "Jasmin Mulic", SarajevoId, 15, 7, 2000);
+    jasmin.Info();*/
+ 
+
+   /*Datum danas;
+   danas.SetDanasnjiDatum();
+
+   int brojDana = 0;
+   do {
+       cout << danas.ToString()<<endl;
+       cout << danas.ToCharArray() << endl; //povratna vrijednost?
+
+       cout << "Broj dana -> ";
+       cin >> brojDana;
+       danas.SetDanasnjiDatum();
+       danas.AddDays(brojDana);    
+   } while (1);*/
+}
