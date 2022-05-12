@@ -1,0 +1,265 @@
+#include<iostream>
+#include<ctime>
+#include<string>
+#include<vector>
+#include<list>
+#include<tuple>
+#include<functional>
+#include<algorithm>
+
+using namespace std;
+const char* crt = "\n-------------------------------\n";
+char* KreirajNizOd(const char* sadrzaj) {//Denis Music
+    if (sadrzaj == nullptr) return nullptr;
+    int velicina = strlen(sadrzaj) + 1;
+    char* temp = new char[velicina];
+    strcpy_s(temp, velicina, sadrzaj);
+    return temp;
+}
+void KreirajUniqueNizOd(unique_ptr<char[]>& unPtr,
+    const char* sadrzaj, bool reset = true) {
+    if (sadrzaj == nullptr) return;
+    if (reset) unPtr.reset();
+    int velicina = strlen(sadrzaj) + 1;
+    unPtr = make_unique<char[]>(velicina);
+    strcpy_s(unPtr.get(), velicina, sadrzaj);
+}
+
+
+class Datum {
+private:
+    int _dan, _mjesec, _godina;
+    bool PrestupnaGodina(int godina) {
+        return godina % 4 == 0
+            && godina % 100 != 0
+            || godina % 400 == 0;
+    }
+    int PosljednjiDanUMjesecu(int mjesec, int godina) {
+        if (mjesec == 2)
+            return 28 + PrestupnaGodina(godina);
+        if (mjesec == 4 || mjesec == 6 || mjesec == 9 || mjesec == 11)
+            return 30;
+        return 31;
+    }
+    bool ValidanDatum(int dan, int mjesec, int godina) {
+        return !(dan < 1 || dan>PosljednjiDanUMjesecu(mjesec, godina)
+            || mjesec < 1 || mjesec>12 || godina < 1900);
+    }
+    void SetDatum(int dan, int mjesec, int godina) {
+        _dan = dan;
+        _mjesec = mjesec;
+        _godina = godina;
+    }
+    tm GetTrenutniDatum() {
+        tm datum;
+        time_t trenutno = time(nullptr);
+        localtime_s(&datum, &trenutno);
+        return datum;
+    }
+public:
+    Datum(int dan = 1, int mjesec = 1, int godina = 2000) {
+        if (ValidanDatum(dan, mjesec, godina))
+            SetDatum(dan, mjesec, godina);
+        else
+            SetDanasnjiDatum();
+    }
+    void SetDanasnjiDatum() {
+        tm danas = GetTrenutniDatum();
+        SetDatum(danas.tm_mday, danas.tm_mon + 1, danas.tm_year + 1900);
+    }
+    void Prikazi() {
+        cout << _dan << "." << _mjesec << "." << _godina << endl;
+    }
+    void AddDays(int brojDana) {
+
+        while (brojDana > 0)
+        {
+            int danaDoKrajaMjeseca =
+                PosljednjiDanUMjesecu(_mjesec, _godina) - _dan + 1;
+            if (brojDana >= danaDoKrajaMjeseca) {
+                brojDana -= danaDoKrajaMjeseca;
+                _dan = 1;
+                _mjesec++;
+                if (_mjesec > 12) {
+                    _mjesec = 1;
+                    _godina++;
+                }
+            }
+            else {
+                _dan += brojDana;
+                return;
+            }
+
+        }
+    }
+    string ToString() {
+        return to_string(_dan) + "." + to_string(_mjesec) + "." +
+            to_string(_godina);
+    }
+    char* ToCharArray() {
+        const int max = 15;
+        char* temp = new char[max];//17.3.2022
+        char buffer[max];//"2022"
+
+        _itoa_s(_dan, buffer, 10);//17
+        strcpy_s(temp, max, buffer);
+        strcat_s(temp, max, ".");
+        _itoa_s(_mjesec, buffer, 10);//3
+        strcat_s(temp, max, buffer);
+        strcat_s(temp, max, ".");
+        _itoa_s(_godina, buffer, 10);//3
+        strcat_s(temp, max, buffer);
+
+
+        return temp;
+    }
+    int GetDan()const { return _dan; }
+    int GetMjesec()const { return _mjesec; }
+    int GetGodinu()const { return _godina; }
+};
+#include<memory>
+
+class Predmet {
+    unique_ptr<char[]> _naziv;
+    int _semestar;
+public:
+    Predmet(int semestar = 1, const char* naziv = "") {
+        _semestar = semestar;
+        KreirajUniqueNizOd(_naziv, naziv);
+    }
+    Predmet(Predmet& obj) {
+        _semestar = obj._semestar;
+        KreirajUniqueNizOd(_naziv, obj._naziv.get());
+    }
+    Predmet& operator=(Predmet& obj) {
+        if (this != &obj) {
+            _semestar = obj._semestar;
+            KreirajUniqueNizOd(_naziv, obj._naziv.get());
+        }
+        return *this;
+    }
+    ~Predmet() { }
+    void Info() {
+        cout << _naziv.get() << " (" << _semestar << ")" << endl;
+    }
+};
+class Osoba {
+
+};
+class Student {
+    void ProsiriNiz() {
+        int velicina = _trenutno + 1;
+        shared_ptr<Predmet[]> temp(new Predmet[velicina]);
+        for (size_t i = 0; i < _trenutno; i++)
+            temp[i] = _polozeni[i];
+        _polozeni.reset();
+        _polozeni = temp;
+    }
+protected:
+    int _indeks;
+    char* _imePrezime;
+    shared_ptr<Predmet[]> _polozeni;
+    int _trenutno;
+public:
+    _declspec(property(get = GetIndeks, put = SetIndeks))
+        int Indeks;
+    int GetIndeks() { return _indeks; }
+    void SetIndeks(int indeks) { _indeks = indeks; }
+    Student(int indeks, const char* imePrezime)
+    {
+        _indeks = indeks;
+        _imePrezime = KreirajNizOd(imePrezime);
+        _polozeni = nullptr;
+        _trenutno = 0;
+    }
+    void DodajPolozeni(Predmet& obj) {
+        ProsiriNiz();
+        _polozeni[_trenutno] = obj;
+        _trenutno++;
+    }
+    ~Student()
+    {
+        delete[]_imePrezime;
+        _imePrezime = nullptr;
+    }
+    friend ostream& operator<<(ostream& COUT, Student& obj) {
+        COUT << obj._indeks << " -> " << obj._imePrezime << endl;
+        for (size_t i = 0; i < obj._trenutno; i++)
+            obj._polozeni[i].Info(); 
+        return COUT;
+    }
+};
+
+class DLStudent : public Student {
+    char* _lokacijaPolaganja;
+public:   
+    DLStudent(int indeks, const char* imePrezime, const char* lokacijaPolaganja)
+        : Student(indeks, imePrezime)
+    {       
+        _lokacijaPolaganja = KreirajNizOd(lokacijaPolaganja);
+    }
+    ~DLStudent()
+    {    
+        delete[]_lokacijaPolaganja;
+        _lokacijaPolaganja = nullptr;
+    }
+    friend ostream& operator<<(ostream& COUT, DLStudent& obj) {
+        COUT << (Student&)obj;
+        COUT << "Lokacija -> " << obj._lokacijaPolaganja << endl;
+        return COUT;
+    }
+};
+void main() {
+
+    int brojElemenata = 5;
+
+    Predmet prII(2, "Programiranje II");
+    Predmet prIII(3, "Programiranje III");
+
+    /*Student denis(150051, "Denis Music");
+    denis.DodajPolozeni(prII);
+    denis.DodajPolozeni(prIII);*/
+
+    DLStudent jasmin(160061, "Jasmin Azemovic", "Sarajevo");
+    jasmin.DodajPolozeni(prII);
+    jasmin.DodajPolozeni(prIII);
+    cout << jasmin;
+    //uniqe; shared
+    //unique_ptr<Predmet[]> prII(new Predmet[brojObjekata]); //= make_unique<Predmet>(150051);
+ //   cout << *prII << endl;
+    /*unique_ptr<int> prII = make_unique<int>(2);
+    unique_ptr<int> prII_2 = move(prII);*/
+
+    /* int* problem = new int(150000);
+
+     shared_ptr<int> dijeljeni1(problem);
+     shared_ptr<int> dijeljeni2(problem);*/
+
+
+     /* shared_ptr<int> spInt1 = make_shared<int>(150);
+      cout <<"Broj objekat -> "<< spInt1.use_count() << endl;
+      shared_ptr<int> spInt2 = spInt1;
+      cout << "Broj objekat -> " << spInt1.use_count() << endl;
+      {
+          shared_ptr<int> spInt3 = spInt1;
+          cout << "Broj objekat -> " << spInt1.use_count() << endl;
+      }
+      cout << "Broj objekat -> " << spInt1.use_count() << endl;*/
+
+      /* shared_ptr<int[]> brojevi(new int[brojElemenata]);
+       for (size_t i = 0; i < brojElemenata; i++)
+            brojevi[i] = 150000 + i;
+
+       for (size_t i = 0; i < brojElemenata; i++)
+           cout<<brojevi[i]<<", ";
+       cout << endl;
+
+
+       shared_ptr<Predmet[]> brojevi2(new Predmet[brojElemenata],
+           [](Predmet* pok) {
+               delete[] pok;
+               cout << "OBJEKTI DEALOCIRANI" << endl;
+           }
+       );*/
+
+}
