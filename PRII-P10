@@ -1,0 +1,157 @@
+#include<iostream>
+using namespace std;
+const char* crt = "\n-------------------------------\n";
+
+char* KreirajNizOd(const char* sadrzaj) {//Denis Music
+    if (sadrzaj == nullptr) return nullptr;
+    int velicina = strlen(sadrzaj) + 1;
+    char* temp = new char[velicina];
+    strcpy_s(temp, velicina, sadrzaj);
+    return temp;
+}
+void KreirajUniqueNizOd(unique_ptr<char[]>& unPtr, const char* sadrzaj, bool reset = true) {
+    if (sadrzaj == nullptr) return;
+    if (reset) unPtr.reset();
+    int velicina = strlen(sadrzaj) + 1;
+    unPtr = make_unique<char[]>(velicina);
+    strcpy_s(unPtr.get(), velicina, sadrzaj);
+}
+
+class Osoba {};
+class Fakultet{};
+class Predmet {};
+class Student : public Osoba, public Predmet
+{
+    //Fakultet _fakultet;//<<<
+    //Fakultet * _fakultet;//
+    //Predmet * _polozeni;//
+
+public:
+    Student(Fakultet & fakultet)
+    {
+     //   _fakultet = &fakultet;
+    //    _fakultet = new Fakultet()
+    }
+
+    ~Student()
+    {
+        //delete _fakultet;
+    }
+};
+class Uposlenik{};
+class Asistent : public Uposlenik, public Student {
+
+};
+
+enum VrstaDokumenta{JPG, PDF, PNG};
+class Dokument {
+    VrstaDokumenta _vrsta;
+    char* _sadrzaj;
+};
+
+class Uredjaj {
+    char* _proizvodjac;
+    char* _model;
+public:
+    Uredjaj(const char * proizvodjac, const char* model)
+    {
+        _proizvodjac = KreirajNizOd(proizvodjac);
+        _model = KreirajNizOd(model);
+    }
+    ~Uredjaj()
+    {
+        delete[] _proizvodjac; _proizvodjac = nullptr;
+        delete[] _model;  _model = nullptr;
+
+    }
+    friend ostream& operator<<(ostream& COUT, Uredjaj& obj) {
+        COUT << obj._proizvodjac << " " << obj._model << endl;
+        return COUT;
+    }
+};
+class Printer : virtual public Uredjaj {    
+    bool _laserski;
+public:
+    Printer(const char* proizvodjac, const char* model, bool laserski)
+        :Uredjaj(proizvodjac, model)
+    {
+        _laserski = laserski;
+    }
+    void Printaj() {
+        cout << "PRINTAM...." << endl;
+    }
+    friend ostream& operator<<(ostream& COUT, Printer& obj) {
+        COUT << (Uredjaj&)obj;
+        COUT << "PRINT: " << obj._laserski << endl;
+        return COUT;
+    }
+};
+class Skener : virtual public Uredjaj {
+    int _brzinaSkeniranja;
+public:
+    Skener(const char* proizvodjac, const char* model, int brzinaSkeniranja)
+        :Uredjaj(proizvodjac, model)
+    {
+        _brzinaSkeniranja = brzinaSkeniranja;
+    }
+    void Skeniraj() {
+        cout << "SKENIRAM...." << endl;
+    }
+    friend ostream& operator<<(ostream& COUT, Skener& obj) {
+        COUT << (Uredjaj&)obj;
+        COUT << "SCAN: "<< obj._brzinaSkeniranja << endl;
+        return COUT;
+    }
+};
+class Fax : virtual public Uredjaj {
+    int _brzinaFaxiranja;
+public:
+    Fax(const char* proizvodjac, const char* model, int brzinaFaxiranja)
+        :Uredjaj(proizvodjac, model)
+    {
+        _brzinaFaxiranja = brzinaFaxiranja;
+    }
+    void Faxiraj() {
+        cout << "FAXIRAM...." << endl;
+    }
+    friend ostream& operator<<(ostream& COUT, Fax& obj) {
+        COUT << (Uredjaj&)obj;
+        COUT << "FAX: " << obj._brzinaFaxiranja << endl;
+        return COUT;
+    }
+};
+
+class AllInOne : public Printer, public Skener, public Fax {
+public:
+    AllInOne(const char* proizvodjac, const char* model, bool laserski,
+        int brzinaSkeniranja, int brzinaFaxiranja) :
+        Printer(proizvodjac, "PRINTER", laserski),
+        Skener(proizvodjac, "SKENER", brzinaSkeniranja),
+        Fax(proizvodjac, "FAX", brzinaFaxiranja),
+        Uredjaj(proizvodjac, "ALLINONE")
+    {}
+    
+    friend ostream& operator<<(ostream& COUT, AllInOne& obj) {
+        COUT << (Printer&)obj << crt;   
+        COUT << (Skener&)obj << crt;
+        COUT << (Fax&)obj << crt;
+        return COUT;
+    }
+
+};
+
+void Test(Uredjaj& uredjaj) {
+}
+
+Uredjaj& GetAktivniUredjaj() {
+    Printer epsonG23("Epson", "G23", true);
+    return  epsonG23;
+}
+
+void main() {
+    AllInOne hp210e("HP","210e",true, 5, 8);
+    cout << hp210e;
+
+    Printer epsonG23("Epson", "G23", true);
+    Test(epsonG23);
+}
