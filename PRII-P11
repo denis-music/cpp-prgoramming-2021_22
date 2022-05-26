@@ -1,0 +1,148 @@
+#include<iostream>
+using namespace std;
+const char* crt = "\n-------------------------------\n";
+
+char* KreirajNizOd(const char* sadrzaj) {//Denis Music
+    if (sadrzaj == nullptr) return nullptr;
+    int velicina = strlen(sadrzaj) + 1;
+    char* temp = new char[velicina];
+    strcpy_s(temp, velicina, sadrzaj);
+    return temp;
+}
+void KreirajUniqueNizOd(unique_ptr<char[]>& unPtr, const char* sadrzaj, bool reset = true) {
+    if (sadrzaj == nullptr) return;
+    if (reset) unPtr.reset();
+    int velicina = strlen(sadrzaj) + 1;
+    unPtr = make_unique<char[]>(velicina);
+    strcpy_s(unPtr.get(), velicina, sadrzaj);
+}
+
+enum VrstaDokumenta{JPG, PDF, PNG};
+class Dokument {
+    VrstaDokumenta _vrsta;
+    char* _sadrzaj;
+public:
+    Dokument(const char * sadrzaj, VrstaDokumenta vrsta)
+    {
+        _sadrzaj = KreirajNizOd(sadrzaj);
+        _vrsta = vrsta;
+    }
+    ~Dokument()
+    {
+        delete[] _sadrzaj;
+        _sadrzaj = nullptr;
+    }
+    friend ostream& operator<<(ostream& COUT, Dokument& obj) {
+        COUT << obj._sadrzaj ;
+        return COUT;
+    }
+    char* GetSadrzaj() { return _sadrzaj; }
+
+};
+
+class Uredjaj {
+    char* _proizvodjac;
+    char* _model;
+public:
+    Uredjaj(const char * proizvodjac, const char* model)
+    {
+        _proizvodjac = KreirajNizOd(proizvodjac);
+        _model = KreirajNizOd(model);
+    }
+    ~Uredjaj()
+    {
+        delete[] _proizvodjac; _proizvodjac = nullptr;
+        delete[] _model;  _model = nullptr;
+
+    }
+    friend ostream& operator<<(ostream& COUT, Uredjaj& obj) {
+        COUT << obj._proizvodjac << " " << obj._model << endl;
+        return COUT;
+    }
+};
+
+class FITexception : public exception{
+    char* _fajl;
+    char* _metoda;
+    char* _datum;
+    char* _vrijeme;
+    int _linijaKoda;
+public:
+    FITexception(const char * poruka, const char*fajl, const char*metoda, const char*datum, const char*vrijeme, int linijaKoda)
+        :exception(poruka)   {
+        _fajl = KreirajNizOd(fajl);
+        _metoda = KreirajNizOd(metoda);
+        _datum = KreirajNizOd(datum);
+        _vrijeme = KreirajNizOd(vrijeme);
+        _linijaKoda = linijaKoda;
+
+    }
+    ~FITexception()
+    {
+        delete[] _fajl;     _fajl    =nullptr;
+        delete[] _metoda;   _metoda  =nullptr;
+        delete[] _datum;    _datum   =nullptr;
+        delete[] _vrijeme;  _vrijeme =nullptr;
+
+    }
+    friend ostream& operator<<(ostream& COUT, FITexception& obj) {
+        COUT <<crt <<obj._datum<<" " <<obj._vrijeme << endl;
+        COUT << obj._fajl << endl << obj._metoda <<" @ " <<obj._linijaKoda << endl;
+        COUT << obj.what() << crt;
+
+        return COUT;
+    }
+};
+
+class Printer : virtual public Uredjaj {    
+    bool _laserski;
+    bool _imaPapira;
+    float _nivoTonera;
+    float GetPotrebanNivoTonera(Dokument& dokument) {
+        return strlen(dokument.GetSadrzaj()) / 100.0;
+    }
+public:
+    Printer(const char* proizvodjac, const char* model, bool laserski)
+        :Uredjaj(proizvodjac, model)
+    {
+        _laserski = laserski;
+        _imaPapira = true;
+        _nivoTonera = 0;
+    }
+    void Printaj(Dokument & dokument)  {
+        if (_imaPapira == false)
+            throw FITexception("Nedostaje papira u printeru",__FILE__,__FUNCTION__,__DATE__,__TIME__,__LINE__);
+        float potrebnoTonera = GetPotrebanNivoTonera(dokument);
+        if (potrebnoTonera > _nivoTonera)
+            throw FITexception("Nedostaje tonera u printeru", __FILE__, __FUNCTION__, __DATE__, __TIME__, __LINE__);
+        cout <<crt<< "PRINTAM...." << crt;
+        cout << dokument << crt;
+        _nivoTonera -= potrebnoTonera;        
+    }
+    friend ostream& operator<<(ostream& COUT, Printer& obj) {
+        COUT << (Uredjaj&)obj;
+        COUT << "PRINT: " << obj._laserski << endl;
+        return COUT;
+    }
+};
+
+void main() {
+    Dokument prII_v10("U okviru ovog dokumenta su pojasnjeni izuzeci kao mehanizam obavjestavanja da se desilo odstupanje od ocekivanog ponasanja aplikacije", PDF);
+    Printer epsonG23("Epson", "G23", true);
+       
+    try
+    {
+        epsonG23.Printaj(prII_v10);        
+    }   
+    catch (exception& greska)
+    {
+        cout << "Greska exception -> " << greska.what() << endl;
+    }   
+    catch (FITexception& greska)
+    {
+        cout << "Greska FITexception -> " << greska << endl;
+    }    
+    catch (...) {
+
+    }
+}
