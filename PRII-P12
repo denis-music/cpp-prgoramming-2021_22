@@ -1,0 +1,199 @@
+#include<string>
+#include<iostream>
+#include<vector>
+#include<list>
+#include<algorithm>
+
+
+using namespace std;
+char* KreirajNizOd(const char* sadrzaj) {//Denis Music
+    if (sadrzaj == nullptr) return nullptr;
+    int velicina = strlen(sadrzaj) + 1;
+    char* temp = new char[velicina];
+    strcpy_s(temp, velicina, sadrzaj);
+    return temp;
+}
+void KreirajUniqueNizOd(unique_ptr<char[]>& unPtr, const char* sadrzaj, bool reset = true) {
+    if (sadrzaj == nullptr) return;
+    if (reset) unPtr.reset();
+    int velicina = strlen(sadrzaj) + 1;
+    unPtr = make_unique<char[]>(velicina);
+    strcpy_s(unPtr.get(), velicina, sadrzaj);
+}
+
+class FITstring {
+    char* _sadrzaj;
+    void Dealociraj() {
+        delete[] _sadrzaj; _sadrzaj = nullptr;
+    }
+public:
+    FITstring(const char * sadrzaj)
+    {
+        _sadrzaj = KreirajNizOd(sadrzaj);
+    }
+    ~FITstring()
+    {
+        Dealociraj();
+    }
+    FITstring(const FITstring& obj) {
+        _sadrzaj = KreirajNizOd(obj._sadrzaj);
+    }
+    FITstring& operator=(const FITstring& obj) {
+        if (this != &obj) {
+            Dealociraj();
+            _sadrzaj = KreirajNizOd(obj._sadrzaj);
+        }
+    }
+    friend ostream& operator<<(ostream& COUT, const FITstring& obj) {
+        COUT << obj._sadrzaj;
+        return COUT;
+    }
+    char& operator[](int lokacija) {
+        if (lokacija < 0 || lokacija >= strlen(_sadrzaj))
+            throw exception("Nepostojeca lokacija");
+        return _sadrzaj[lokacija];
+    }
+    bool operator==(const FITstring& obj) {
+        return strcmp(_sadrzaj, obj._sadrzaj) == 0;
+    }
+    FITstring & insert(int lokacija, const char* sadrzaj) {
+        int vel = strlen(_sadrzaj) + strlen(sadrzaj) + 1;
+        char* temp = new char[vel];
+        strncpy_s(temp, vel, _sadrzaj, lokacija);
+        strcat_s(temp, vel, sadrzaj);
+        strcat_s(temp, vel, _sadrzaj + lokacija);
+        Dealociraj();
+        _sadrzaj = temp;
+        temp = nullptr;
+        return *this;
+    }
+    FITstring & append(const char* sadrzaj) {
+        int vel = strlen(_sadrzaj) + strlen(sadrzaj) + 1;
+        char* temp = new char[vel];
+        strcpy_s(temp, vel, _sadrzaj);
+        strcat_s(temp, vel, sadrzaj);
+        Dealociraj();
+        _sadrzaj = temp;
+        temp = nullptr;
+        return *this;
+    }
+    FITstring& operator += (const char* sadrzaj) {
+        return append(sadrzaj);
+    }
+    FITstring operator+(const FITstring& obj) {
+        //fit + " " 
+        FITstring temp(_sadrzaj);
+        temp.append(obj._sadrzaj);
+        return temp;
+    }
+};
+class Student {
+    int _indeks;
+    string _ime;
+    string _prezime;
+    vector<string> _napomene;
+public:
+    Student(int indeks, string ime, string prezime)
+    {
+        _indeks = indeks;
+        _ime = ime;
+        _prezime = prezime;
+    }
+    bool operator<(const Student& obj) {
+        return _indeks < obj._indeks;
+    }
+    friend ostream& operator<<(ostream& COUT, const Student& obj) {
+        COUT << obj._indeks << " " << obj._ime << " " << obj._prezime;
+        return COUT;
+    }
+};
+void Ispis(vector<Student>& obj) {
+    for (size_t i = 0; i < obj.size(); i++)
+        cout << obj[i] << endl;
+    cout << endl;
+}
+void Ispis(list<Student>& obj) {
+    for(auto st : obj)
+        cout << st << endl;
+    cout << endl;
+}
+#include<regex>
+void main() {
+
+    //string pravilo = "\\w*\\.?\\w*@(edu.)?fit\\.ba";
+    //string pravilo = "\\+\\d{2,3}\\s?\\d{2}\\s?\\d{2,3}([\\s-])?\\d{2,3}";
+
+    string
+        minimalnoZankova = "(?=.{7,15})",
+        malaSlova = "(?=.*[a-z])",
+        velikaSlova = "(?=.*[A-Z])",
+        brojevi = "(?=.*[0-9])",
+        specijalniZankovi = "(?=.*[!$_])",
+        pravilo = minimalnoZankova + malaSlova + velikaSlova + brojevi + specijalniZankovi;
+    string unos;
+    regex regObj(pravilo);
+    do {
+        cout << "Lozinka -> ";
+        getline(cin, unos);
+        if (regex_search(unos, regObj))
+            cout << "\tVALIDNA" << endl;    
+    } while (1);
+
+    //list<Student> studenti;
+    //for (size_t i = 0; i < 5; i++)
+    //    studenti.push_back(Student(210000 + i,
+    //        "ime_"+to_string(i),
+    //        "prezime_"+to_string(i)));
+    //Ispis(studenti);
+    //studenti.sort();
+
+
+   /* vector<int>::iterator it = randBrojevi.begin();
+   
+    for (it; it != randBrojevi.end(); it++)
+        cout << *it << ", ";
+    cout << endl;
+   */
+
+
+    /*string tacanOdgovor = "Prof.Dr. Safet Krkic";
+    string asocijacija =  "Prof.Dr. _____ _____";
+    string vratiUnazad(11, '\b');
+    string unos;
+    
+    cout << "Unesite ime osnivaca i prvog dekana FIT-a?"<<endl;
+    cout << asocijacija << vratiUnazad;
+    getline(cin, unos);
+    cout << "Unijeli ste -> " << unos << endl;
+
+    int lokacija = asocijacija.find('_');
+    asocijacija.replace(lokacija, unos.size(), unos);
+    if (tacanOdgovor == asocijacija)
+        cout << "TACAN ODGOVOR" << endl;*/
+
+
+    /* string fit = "Fakultet informacijskih tehnologija UNMO.ba";
+     cout << fit << endl;
+     cout << "size => " << fit.size() << endl;
+     cout << "capacity => " << fit.capacity() << endl;
+     cout << "max_size => " << fit.max_size() << endl;*/
+
+
+
+
+  //  FITstring fit = "fakultet informacijskih tehnologija";
+  //  FITstring unmo ("Univerzitet Dzemal Bijedic");
+  //  fit[0] = 'F';
+  //  cout << fit << endl;
+  //  if (fit == "Fakultet informacijskih tehnologija")
+  //      cout << "Sadrzaj OK..." << endl;
+  ////www.fit.ba Fakultet informacijskih tehnologija, Mostar 88208
+  //  fit.insert(0, "www.fit.ba ");
+  //  cout << fit << endl;
+
+  //  fit.append(", Mostar");
+  //  fit += " 88208";
+
+  //  FITstring fitUNMO = fit + " " + unmo;
+  //  cout << fitUNMO << endl;
+}
